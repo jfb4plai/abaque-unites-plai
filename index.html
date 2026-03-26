@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abaque des Unités — PLAI</title>
+<style>
+:root {
+  --dark:#1e1b4b; --pink:#ec4899; --bg:#eef0f8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* HEADER */
+.hdr{background:var(--dark);display:flex;align-items:center;padding:8px 16px;gap:14px;}
+.hdr img{height:44px;}
+.hdr-title{color:white;font-size:1.2rem;font-weight:700;flex:1;}
+.btn-teacher{background:transparent;border:2px solid var(--pink);color:var(--pink);padding:6px 16px;border-radius:20px;cursor:pointer;font-weight:600;font-size:.9rem;}
+.btn-teacher:hover{background:var(--pink);color:white;}
+
+/* CONTROLS */
+.ctrl-bar{background:white;border-bottom:2px solid #e5e7eb;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.ctrl-group{display:flex;align-items:center;gap:8px;}
+.ctrl-group label{font-weight:700;color:var(--dark);font-size:1rem;}
+.ctrl-group select{padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:1rem;cursor:pointer;}
+.btn-new{background:var(--dark);color:white;border:none;padding:10px 22px;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;}
+.btn-new:hover{background:#2d2a6e;}
+
+/* SCORE */
+.score-bar{background:white;padding:6px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #e5e7eb;}
+.score-label{font-weight:700;color:var(--dark);font-size:1rem;}
+.score-progress{flex:1;height:12px;background:#e5e7eb;border-radius:6px;overflow:hidden;}
+.score-fill{height:100%;background:#22c55e;border-radius:6px;transition:width .4s;}
+.score-count{font-size:.9rem;color:#6b7280;min-width:50px;text-align:right;}
+
+/* MAIN */
+.main{flex:1;display:flex;overflow:hidden;}
+
+/* LEFT — ABAQUE */
+.col-left{flex:0 0 58%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 10px;border-right:2px solid #e5e7eb;gap:8px;}
+.abaque-title{font-size:1.1rem;font-weight:700;color:var(--dark);}
+.dir-wrap{display:flex;align-items:center;gap:6px;font-size:1rem;font-weight:600;color:var(--dark);min-height:28px;}
+.dir-arrow{font-size:1.8rem;color:var(--pink);}
+.dir-steps{font-size:.95rem;color:#6b7280;}
+.abaque-cols{display:flex;align-items:flex-end;gap:0;}
+.abaque-col{display:flex;flex-direction:column;align-items:center;}
+.a-rang{font-size:.85rem;font-weight:700;padding:3px 0;text-align:center;min-width:78px;}
+.a-cell{width:78px;height:78px;border:2px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:900;color:#374151;background:white;transition:all .3s;}
+.a-cell.src{background:rgba(236,72,153,.15);border:3px solid var(--pink);}
+.a-cell.dst{background:rgba(30,27,75,.12);border:3px solid var(--dark);}
+.a-cell.path{background:rgba(99,102,241,.07);}
+.a-x10{font-size:.62rem;font-weight:700;color:#9ca3af;padding:0 1px;align-self:center;}
+.surface-warn{background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:6px 12px;font-size:.82rem;color:#92400e;display:none;}
+.surface-warn.show{display:block;}
+
+/* PONT dm³ ↔ L */
+.bridge{background:#f0fdf4;border:2px solid #22c55e;border-radius:10px;padding:8px 14px;display:none;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.bridge.show{display:flex;}
+.bridge-title{font-size:.8rem;font-weight:700;color:#166534;width:100%;text-align:center;margin-bottom:2px;}
+.bridge-eq{display:flex;align-items:center;gap:6px;font-size:.95rem;font-weight:700;}
+.bridge-eq .unit-cap{color:#0ea5e9;} /* capacité */
+.bridge-eq .unit-cub{color:#6366f1;} /* cubique */
+.bridge-sep{color:#9ca3af;font-size:1.1rem;}
+
+/* RIGHT — EXERCICE */
+.col-right{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px;}
+.q-box{background:var(--dark);color:white;border-radius:14px;padding:18px 24px;text-align:center;width:100%;max-width:400px;}
+.q-label{font-size:.95rem;opacity:.8;margin-bottom:6px;}
+.q-text{font-size:2.2rem;font-weight:900;line-height:1.2;}
+.ans-display{border:3px solid var(--pink);border-radius:12px;padding:12px 18px;text-align:center;font-size:1.9rem;font-weight:700;color:var(--dark);background:white;width:100%;max-width:400px;min-height:60px;}
+.vkb{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;width:100%;max-width:400px;}
+.vkb button{padding:14px;font-size:1.3rem;font-weight:700;border:none;border-radius:9px;background:#f3f4f6;color:var(--dark);cursor:pointer;transition:background .1s;}
+.vkb button:active,.vkb button:hover{background:#d1d5db;}
+.vkb .btn-del{background:var(--dark);color:white;font-size:1.1rem;}
+.vkb .btn-comma{background:#374151;color:white;}
+.vkb .btn-ok{background:var(--pink);color:white;grid-column:span 2;font-size:1.1rem;}
+.vkb .btn-clear{background:#fca5a5;color:#7f1d1d;grid-column:span 2;}
+.fb{border-radius:10px;padding:10px 16px;text-align:center;font-size:1rem;font-weight:700;width:100%;max-width:400px;}
+.fb.neutral{background:#f3f4f6;color:#6b7280;}
+.fb.ok{background:#dcfce7;color:#166534;}
+.fb.ko{background:#fee2e2;color:#991b1b;}
+
+/* TEACHER PANEL */
+.teacher-panel{position:fixed;top:0;right:-430px;width:410px;height:100vh;background:white;border-left:3px solid var(--pink);overflow-y:auto;z-index:1000;transition:right .3s;box-shadow:-4px 0 20px rgba(0,0,0,.15);padding:20px;}
+.teacher-panel.open{right:0;}
+.tp-title{color:var(--pink);font-size:1.2rem;font-weight:800;margin-bottom:16px;}
+.tp-close{float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;}
+.tp-section{margin-bottom:18px;}
+.tp-section h3{font-size:.95rem;font-weight:700;color:var(--dark);margin-bottom:8px;border-bottom:2px solid #e5e7eb;padding-bottom:5px;}
+.tp-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:.95rem;}
+.tp-row label{flex:1;}
+.tp-row input[type=checkbox]{width:18px;height:18px;cursor:pointer;}
+.tp-row input[type=number]{width:65px;padding:4px 8px;border:1px solid #ddd;border-radius:6px;}
+.riss-ref{background:#f0f4ff;border-left:3px solid #6366f1;border-radius:6px;padding:10px 12px;margin-bottom:9px;font-size:.8rem;line-height:1.5;}
+.riss-ref strong{color:var(--dark);}
+
+/* LOGIN */
+.login-overlay{position:fixed;inset:0;background:rgba(30,27,75,.85);display:none;align-items:center;justify-content:center;z-index:2000;}
+.login-overlay.show{display:flex;}
+.login-box{background:white;border-radius:16px;padding:32px;width:330px;}
+.login-box h2{color:var(--dark);font-size:1.2rem;margin-bottom:18px;}
+.login-box input{width:100%;padding:10px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:1rem;margin-bottom:10px;}
+.login-box button{width:100%;padding:12px;background:var(--pink);color:white;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;}
+.login-err{color:#dc2626;font-size:.85rem;margin-top:8px;}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <img src="PLAI.jpg" alt="PLAI">
+  <span class="hdr-title">Abaque des Unités</span>
+  <button class="btn-teacher" id="btnTeacher">Mode Enseignant</button>
+</header>
+
+<!-- CONTROLS -->
+<div class="ctrl-bar">
+  <div class="ctrl-group">
+    <label>Catégorie :</label>
+    <select id="selCat">
+      <option value="length">Longueur</option>
+      <option value="mass">Masse</option>
+      <option value="volume">Volume — capacité (L)</option>
+      <option value="volumecubic">Volume — cubique (m³) ×1000</option>
+      <option value="area">Surface ⚠️</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <label>De :</label>
+    <select id="selFrom"></select>
+  </div>
+  <div class="ctrl-group">
+    <label>Vers :</label>
+    <select id="selTo"></select>
+  </div>
+  <button class="btn-new" id="btnNew">🎲 Nouveau</button>
+</div>
+
+<!-- SCORE -->
+<div class="score-bar">
+  <span class="score-label">Score&nbsp;<span id="sc">0</span>&nbsp;/&nbsp;<span id="scTot">0</span></span>
+  <div class="score-progress"><div class="score-fill" id="scFill" style="width:0%"></div></div>
+  <span class="score-count" id="scCount">0/10</span>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ABAQUE -->
+  <div class="col-left">
+    <div class="abaque-title" id="abaqueTitle">Longueur</div>
+    <div class="dir-wrap" id="dirWrap">
+      <span id="dirLabel"></span>
+      <span class="dir-arrow" id="dirArrow"></span>
+      <span class="dir-steps" id="dirSteps"></span>
+    </div>
+    <div class="abaque-cols" id="abaqueCols"></div>
+    <div class="surface-warn" id="surfaceWarn">⚠️ Surface : 1 case = ×100 (pas ×10 comme pour les longueurs)</div>
+    <div class="bridge" id="bridge">
+      <div class="bridge-title">🔗 Pont capacité ↔ volume cubique</div>
+      <div class="bridge-eq"><span class="unit-cub">1 m³</span><span class="bridge-sep">=</span><span class="unit-cap">1 000 L</span><span class="bridge-sep">=</span><span class="unit-cap">1 kL</span></div>
+      <div class="bridge-eq"><span class="unit-cub">1 dm³</span><span class="bridge-sep">=</span><span class="unit-cap">1 L</span></div>
+      <div class="bridge-eq"><span class="unit-cub">1 cm³</span><span class="bridge-sep">=</span><span class="unit-cap">1 mL</span></div>
+    </div>
+  </div>
+
+  <!-- EXERCICE -->
+  <div class="col-right">
+    <div class="q-box">
+      <div class="q-label">Convertis :</div>
+      <div class="q-text" id="qText">—</div>
+    </div>
+    <div class="ans-display" id="ansDisplay">_</div>
+    <div class="vkb" id="vkb"></div>
+    <div class="fb neutral" id="fb">Tape ta réponse.</div>
+  </div>
+
+</div>
+
+<!-- TEACHER PANEL -->
+<div class="teacher-panel" id="teacherPanel">
+  <button class="tp-close" id="tpClose">✕</button>
+  <div class="tp-title">⚙️ Mode Enseignant</div>
+
+  <div class="tp-section">
+    <h3>Affichage abaque</h3>
+    <div class="tp-row"><label>Afficher ×10 entre les cases</label><input type="checkbox" id="optX10" checked></div>
+    <div class="tp-row"><label>Afficher les flèches de direction</label><input type="checkbox" id="optArrows" checked></div>
+  </div>
+
+  <div class="tp-section">
+    <h3>Exercices</h3>
+    <div class="tp-row"><label>Varier automatiquement les unités</label><input type="checkbox" id="optVary"></div>
+    <div class="tp-row"><label>Inclure les décimales</label><input type="checkbox" id="optDecimals"></div>
+    <div class="tp-row"><label>Nombre d'exercices</label><input type="number" id="optNbEx" value="10" min="5" max="30"></div>
+  </div>
+
+  <div class="tp-section">
+    <h3>Catégories disponibles pour les élèves</h3>
+    <div class="tp-row"><label>Longueur</label><input type="checkbox" id="catLength" checked></div>
+    <div class="tp-row"><label>Masse</label><input type="checkbox" id="catMass" checked></div>
+    <div class="tp-row"><label>Volume</label><input type="checkbox" id="catVolume" checked></div>
+    <div class="tp-row"><label>Volume cubique (m³, dm³… ×1000/case)</label><input type="checkbox" id="catVolumeCubic"></div>
+    <div class="tp-row"><label>Surface (×100/case — plus complexe)</label><input type="checkbox" id="catArea"></div>
+  </div>
+
+  <div class="tp-section">
+    <h3>Pont capacité ↔ volume cubique</h3>
+    <div class="tp-row"><label>Afficher le pont dm³=L, cm³=mL, m³=kL</label><input type="checkbox" id="optBridge" checked></div>
+    <div style="font-size:.82rem;color:#6b7280;margin-top:4px;">Visible quand "Volume cubique" est sélectionné</div>
+  </div>
+
+  <div class="tp-section">
+    <h3>📚 Références scientifiques RISS</h3>
+    <div class="riss-ref">
+      <strong>Renault, K. (2023).</strong> Rôle et place de l'abaque dans l'enseignement de la numération en cycle 2. DUMAS.<br>
+      → L'abaque sans affichage explicite des <em>relations entre unités</em> crée des malentendus. La relation ×10 doit être visible dans chaque cellule.
+    </div>
+    <div class="riss-ref">
+      <strong>Roditi, E. (2002).</strong> La multiplication des nombres décimaux. HAL.<br>
+      → "Il importe de <em>comprendre</em> la règle du déplacement de la virgule" — pas seulement l'appliquer mécaniquement par déplacement.
+    </div>
+    <div class="riss-ref">
+      <strong>Chambris, C. & al. (2017).</strong> Un regard sur les nombres à la transition école-collège. HAL.<br>
+      → Le déplacement de la virgule doit être ancré dans la connaissance des <em>relations multiplicatives</em> entre unités — sinon c'est une technique vide de sens.
+    </div>
+  </div>
+
+  <div class="tp-section">
+    <h3>Compte</h3>
+    <button id="btnLogout" style="background:#fee2e2;color:#991b1b;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;">Se déconnecter</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🔐 Mode Enseignant</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPwd" placeholder="Mot de passe">
+    <button id="loginBtn">Connexion</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE ──────────────────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(
+  'https://otiorljbujqzruulmqrs.supabase.co',
+  'sb_publishable_txhpqAZpx_Yth8zFQ3J0QQ_f9QVU0nE'
+);
+
+// ── DONNÉES ───────────────────────────────────────────────
+const UNITS = {
+  length: {
+    name:'Longueur', step:10,
+    units:[
+      {code:'km', label:'km', color:'#0d9488'},
+      {code:'hm', label:'hm', color:'#0ea5e9'},
+      {code:'dam',label:'dam',color:'#6366f1'},
+      {code:'m',  label:'m',  color:'#ec4899'},
+      {code:'dm', label:'dm', color:'#f59e0b'},
+      {code:'cm', label:'cm', color:'#ef4444'},
+      {code:'mm', label:'mm', color:'#8b5cf6'},
+    ]
+  },
+  mass: {
+    name:'Masse', step:10,
+    units:[
+      {code:'t',  label:'t',   color:'#0d9488'},
+      {code:'q',  label:'q',   color:'#0ea5e9'},
+      {code:'kg', label:'kg',  color:'#6366f1'},
+      {code:'hg', label:'hg',  color:'#ec4899'},
+      {code:'dag',label:'dag', color:'#f59e0b'},
+      {code:'g',  label:'g',   color:'#ef4444'},
+      {code:'mg', label:'mg',  color:'#8b5cf6'},
+    ]
+  },
+  volume: {
+    name:'Volume', step:10,
+    units:[
+      {code:'kl', label:'kL',  color:'#0d9488'},
+      {code:'hl', label:'hL',  color:'#0ea5e9'},
+      {code:'dal',label:'daL', color:'#6366f1'},
+      {code:'l',  label:'L',   color:'#ec4899'},
+      {code:'dl', label:'dL',  color:'#f59e0b'},
+      {code:'cl', label:'cL',  color:'#ef4444'},
+      {code:'ml', label:'mL',  color:'#8b5cf6'},
+    ]
+  },
+  volumecubic: {
+    name:'Volume cubique (×1000/case)', step:1000,
+    units:[
+      {code:'m3', label:'m³',  color:'#0d9488'},
+      {code:'dm3',label:'dm³', color:'#6366f1'},
+      {code:'cm3',label:'cm³', color:'#ef4444'},
+      {code:'mm3',label:'mm³', color:'#8b5cf6'},
+    ]
+  },
+  area: {
+    name:'Surface', step:100,
+    units:[
+      {code:'km2',label:'km²', color:'#0d9488'},
+      {code:'ha', label:'ha',  color:'#0ea5e9'},
+      {code:'a',  label:'a',   color:'#6366f1'},
+      {code:'m2', label:'m²',  color:'#ec4899'},
+      {code:'dm2',label:'dm²', color:'#f59e0b'},
+      {code:'cm2',label:'cm²', color:'#ef4444'},
+      {code:'mm2',label:'mm²', color:'#8b5cf6'},
+    ]
+  }
+};
+
+// ── STATE ─────────────────────────────────────────────────
+let cat = 'length';
+let fromIdx = 0, toIdx = 3;
+let currentNumber = 0;
+let correctAnswer = '';
+let typed = '';
+let score = 0, total = 0, maxEx = 10;
+
+// ── INIT ──────────────────────────────────────────────────
+function init() {
+  populateSelects();
+  buildVKB();
+  buildAbaque();
+  generateExercise();
+
+  document.getElementById('selCat').addEventListener('change', e => {
+    cat = e.target.value;
+    document.getElementById('surfaceWarn').classList.toggle('show', cat === 'area');
+    updateBridge();
+    populateSelects();
+    buildAbaque();
+    generateExercise();
+  });
+  document.getElementById('selFrom').addEventListener('change', e => {
+    fromIdx = parseInt(e.target.value);
+    updateAbaque();
+    generateExercise();
+  });
+  document.getElementById('selTo').addEventListener('change', e => {
+    toIdx = parseInt(e.target.value);
+    updateAbaque();
+    generateExercise();
+  });
+  document.getElementById('btnNew').addEventListener('click', generateExercise);
+
+  // Teacher
+  document.getElementById('btnTeacher').addEventListener('click', async () => {
+    const { data:{ session } } = await sb.auth.getSession();
+    if (session) openPanel(); else document.getElementById('loginOverlay').classList.add('show');
+  });
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('loginEmail').addEventListener('keydown', e => e.key==='Enter' && doLogin());
+  document.getElementById('loginPwd').addEventListener('keydown', e => e.key==='Enter' && doLogin());
+  document.getElementById('tpClose').addEventListener('click', () => document.getElementById('teacherPanel').classList.remove('open'));
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    document.getElementById('teacherPanel').classList.remove('open');
+  });
+
+  // Options
+  document.getElementById('optX10').addEventListener('change', buildAbaque);
+  document.getElementById('optArrows').addEventListener('change', updateDirection);
+  document.getElementById('optNbEx').addEventListener('change', e => {
+    maxEx = parseInt(e.target.value) || 10;
+    document.getElementById('scCount').textContent = `${total}/${maxEx}`;
+  });
+
+  // Catégories disponibles → filtrent le dropdown élève
+  ['catLength','catMass','catVolume','catVolumeCubic','catArea'].forEach(id => {
+    document.getElementById(id).addEventListener('change', updateCatSelect);
+  });
+
+  // Pont
+  document.getElementById('optBridge').addEventListener('change', updateBridge);
+
+  // Physical keyboard
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('loginOverlay').classList.contains('show') &&
+        !document.getElementById('teacherPanel').classList.contains('open')) {
+      if ('0123456789'.includes(e.key)) handleKey(e.key);
+      else if (e.key === 'Backspace') handleKey('del');
+      else if (e.key === 'Enter') handleKey('ok');
+      else if (e.key === ',' || e.key === '.') handleKey(',');
+    }
+  });
+}
+
+// ── PONT ──────────────────────────────────────────────────
+function updateBridge() {
+  const show = cat === 'volumecubic' && document.getElementById('optBridge').checked;
+  document.getElementById('bridge').classList.toggle('show', show);
+}
+
+// ── FILTRE CATÉGORIES ─────────────────────────────────────
+function updateCatSelect() {
+  const map = { length:'catLength', mass:'catMass', volume:'catVolume', volumecubic:'catVolumeCubic', area:'catArea' };
+  const selCat = document.getElementById('selCat');
+  const allOptions = selCat.querySelectorAll('option');
+
+  allOptions.forEach(opt => {
+    const cbId = map[opt.value];
+    const checked = cbId ? document.getElementById(cbId).checked : true;
+    opt.hidden = !checked;
+    opt.disabled = !checked;
+  });
+
+  // Si la catégorie active est désactivée, basculer sur la 1ère disponible
+  const activeCb = document.getElementById(map[cat]);
+  if (activeCb && !activeCb.checked) {
+    const first = Object.entries(map).find(([k, v]) => document.getElementById(v).checked);
+    if (first) {
+      cat = first[0];
+      selCat.value = cat;
+      populateSelects();
+      buildAbaque();
+      generateExercise();
+    }
+  }
+}
+
+// ── SELECTS ───────────────────────────────────────────────
+function populateSelects() {
+  const units = UNITS[cat].units;
+  const selFrom = document.getElementById('selFrom');
+  const selTo   = document.getElementById('selTo');
+  selFrom.innerHTML = '';
+  selTo.innerHTML = '';
+  units.forEach((u, i) => {
+    selFrom.innerHTML += `<option value="${i}">${u.label}</option>`;
+    selTo.innerHTML   += `<option value="${i}">${u.label}</option>`;
+  });
+  // Defaults sensibles par catégorie
+  const defaults = { length:[0,3], mass:[2,5], volume:[3,6], volumecubic:[0,2], area:[3,5] };
+  [fromIdx, toIdx] = defaults[cat] || [0, 3];
+  selFrom.value = fromIdx;
+  selTo.value   = toIdx;
+}
+
+// ── ABAQUE ────────────────────────────────────────────────
+function buildAbaque() {
+  const cols = document.getElementById('abaqueCols');
+  const units = UNITS[cat].units;
+  const showX10 = document.getElementById('optX10').checked;
+  const step = UNITS[cat].step;
+  document.getElementById('abaqueTitle').textContent = UNITS[cat].name;
+  cols.innerHTML = '';
+  units.forEach((u, i) => {
+    if (i > 0 && showX10) {
+      const badge = document.createElement('div');
+      badge.className = 'a-x10';
+      badge.textContent = step === 10 ? '×10' : '×100';
+      cols.appendChild(badge);
+    }
+    const col = document.createElement('div');
+    col.className = 'abaque-col';
+    col.innerHTML = `
+      <div class="a-rang" style="color:${u.color}">${u.label}</div>
+      <div class="a-cell" id="cell-${i}">
+        <span id="val-${i}"></span>
+      </div>`;
+    cols.appendChild(col);
+  });
+  updateAbaque();
+}
+
+function updateAbaque() {
+  const units = UNITS[cat].units;
+  units.forEach((u, i) => {
+    const cell = document.getElementById(`cell-${i}`);
+    if (!cell) return;
+    cell.className = 'a-cell';
+    cell.removeAttribute('style');
+    document.getElementById(`val-${i}`).textContent = '';
+  });
+  const src = document.getElementById(`cell-${fromIdx}`);
+  const dst = document.getElementById(`cell-${toIdx}`);
+  if (src) { src.classList.add('src'); }
+  if (dst) { dst.classList.add('dst'); }
+  const lo = Math.min(fromIdx, toIdx), hi = Math.max(fromIdx, toIdx);
+  for (let i = lo + 1; i < hi; i++) {
+    const cell = document.getElementById(`cell-${i}`);
+    if (cell) cell.classList.add('path');
+  }
+  if (src && currentNumber) document.getElementById(`val-${fromIdx}`).textContent = fmtNum(currentNumber);
+  updateDirection();
+}
+
+function updateDirection() {
+  const show = document.getElementById('optArrows').checked;
+  const steps = Math.abs(toIdx - fromIdx);
+  const step  = UNITS[cat].step;
+  const dirLabel = document.getElementById('dirLabel');
+  const dirArrow = document.getElementById('dirArrow');
+  const dirSteps = document.getElementById('dirSteps');
+  if (!show || steps === 0 || fromIdx === toIdx) {
+    dirLabel.textContent = dirArrow.textContent = dirSteps.textContent = '';
+    return;
+  }
+  const factor = Math.pow(step, steps);
+  if (toIdx > fromIdx) {
+    dirArrow.textContent = '→';
+    dirLabel.textContent = `${steps} case(s) vers la droite`;
+    dirSteps.textContent = `× ${fmtNum(factor)}`;
+  } else {
+    dirArrow.textContent = '←';
+    dirLabel.textContent = `${steps} case(s) vers la gauche`;
+    dirSteps.textContent = `÷ ${fmtNum(factor)}`;
+  }
+}
+
+// ── EXERCICE ──────────────────────────────────────────────
+function generateExercise() {
+  // Mode "varier" : tirer une paire from/to aléatoire dans la catégorie
+  if (document.getElementById('optVary').checked) {
+    const n = UNITS[cat].units.length;
+    let a, b;
+    do { a = Math.floor(Math.random() * n); b = Math.floor(Math.random() * n); }
+    while (a === b || Math.abs(a - b) > 4); // max 4 cases d'écart pour rester lisible
+    fromIdx = a; toIdx = b;
+    document.getElementById('selFrom').value = fromIdx;
+    document.getElementById('selTo').value   = toIdx;
+  }
+
+  if (fromIdx === toIdx) {
+    document.getElementById('qText').textContent = 'Choisis deux unités différentes.';
+    return;
+  }
+  const units  = UNITS[cat].units;
+  const step   = UNITS[cat].step;
+  const steps  = Math.abs(toIdx - fromIdx);
+  const factor = Math.pow(step, steps);
+  const withDec = document.getElementById('optDecimals').checked;
+
+  let num;
+  const maxInt = steps <= 2 ? 99 : 9;
+
+  if (toIdx > fromIdx) {
+    // grande → petite unité : nombre simple (e.g. 3 km → m)
+    num = Math.floor(Math.random() * maxInt) + 1;
+    if (withDec && Math.random() > .5) {
+      const dec = Math.floor(Math.random() * 9) + 1;
+      num = parseFloat((num + dec / 10).toFixed(1));
+    }
+  } else {
+    // petite → grande unité : multiple du facteur (e.g. 3000 m → km)
+    num = (Math.floor(Math.random() * maxInt) + 1) * factor;
+    if (withDec && Math.random() > .5) {
+      num += Math.floor(Math.random() * 9) * factor / 10;
+      num = parseFloat(num.toFixed(10));
+    }
+  }
+
+  currentNumber = num;
+  const answer = toIdx > fromIdx ? num * factor : num / factor;
+  // Arrondi propre
+  correctAnswer = fmtNum(parseFloat(answer.toFixed(10)));
+
+  const fl = units[fromIdx].label;
+  const tl = units[toIdx].label;
+  document.getElementById('qText').textContent = `${fmtNum(num)} ${fl}  =  ? ${tl}`;
+
+  typed = '';
+  document.getElementById('ansDisplay').textContent = '_';
+  document.getElementById('fb').className = 'fb neutral';
+  document.getElementById('fb').textContent = 'Tape ta réponse.';
+  updateAbaque();
+}
+
+function fmtNum(n) {
+  const s = parseFloat(n.toFixed(10));
+  if (Number.isInteger(s)) return s.toLocaleString('fr-BE');
+  return s.toLocaleString('fr-BE', { maximumFractionDigits: 8 });
+}
+
+// ── VKB ───────────────────────────────────────────────────
+function buildVKB() {
+  const vkb = document.getElementById('vkb');
+  const keys = [
+    {l:'7',v:'7'},{l:'8',v:'8'},{l:'9',v:'9'},{l:'⌫',v:'del',c:'btn-del'},
+    {l:'4',v:'4'},{l:'5',v:'5'},{l:'6',v:'6'},{l:',',v:',',c:'btn-comma'},
+    {l:'1',v:'1'},{l:'2',v:'2'},{l:'3',v:'3'},{l:'0',v:'0'},
+    {l:'✓ Valider',v:'ok',c:'btn-ok',s:2},{l:'Effacer',v:'clear',c:'btn-clear',s:2},
+  ];
+  vkb.innerHTML = '';
+  keys.forEach(k => {
+    const btn = document.createElement('button');
+    btn.textContent = k.l;
+    if (k.c) btn.classList.add(k.c);
+    if (k.s) btn.style.gridColumn = `span ${k.s}`;
+    const fn = () => handleKey(k.v);
+    btn.addEventListener('click', fn);
+    btn.addEventListener('touchstart', e => { e.preventDefault(); fn(); }, { passive:false });
+    vkb.appendChild(btn);
+  });
+}
+
+function handleKey(v) {
+  if (v === 'del') {
+    typed = typed.slice(0, -1);
+  } else if (v === 'clear') {
+    typed = '';
+    document.getElementById('fb').className = 'fb neutral';
+    document.getElementById('fb').textContent = 'Tape ta réponse.';
+  } else if (v === 'ok') {
+    validate(); return;
+  } else if (v === ',') {
+    if (!typed.includes(',')) typed += ',';
+  } else {
+    if (typed.length < 15) typed += v;
+  }
+  document.getElementById('ansDisplay').textContent = typed || '_';
+}
+
+function validate() {
+  if (!typed) return;
+  total++;
+  const typedNum   = parseFloat(typed.replace(',', '.').replace(/\s/g, ''));
+  const correctNum = parseFloat(correctAnswer.replace(/\s/g, '').replace(',', '.'));
+  const ok = Math.abs(typedNum - correctNum) < 0.0001 * Math.max(1, Math.abs(correctNum));
+
+  if (ok) {
+    score++;
+    document.getElementById('fb').className = 'fb ok';
+    document.getElementById('fb').textContent = `✅ Bravo ! ${typed} est correct.`;
+    // Afficher réponse dans case destination
+    const vEl = document.getElementById(`val-${toIdx}`);
+    if (vEl) vEl.textContent = typed;
+    setTimeout(generateExercise, 2000);
+  } else {
+    document.getElementById('fb').className = 'fb ko';
+    document.getElementById('fb').textContent = '❌ Pas tout à fait. Essaie encore.';
+  }
+  updateScore();
+}
+
+function updateScore() {
+  document.getElementById('sc').textContent = score;
+  document.getElementById('scTot').textContent = total;
+  document.getElementById('scCount').textContent = `${total}/${maxEx}`;
+  const pct = maxEx > 0 ? Math.min((total / maxEx) * 100, 100) : 0;
+  document.getElementById('scFill').style.width = pct + '%';
+}
+
+// ── SUPABASE AUTH ─────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pwd });
+  if (error) {
+    document.getElementById('loginErr').textContent = 'Email ou mot de passe incorrect.';
+  } else {
+    document.getElementById('loginOverlay').classList.remove('show');
+    openPanel();
+  }
+}
+function openPanel() {
+  document.getElementById('teacherPanel').classList.add('open');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
