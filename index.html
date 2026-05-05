@@ -237,10 +237,28 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);height:100vh;overflo
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
     <h2>🔐 Mode Enseignant</h2>
-    <input type="email" id="loginEmail" placeholder="Email">
-    <input type="password" id="loginPwd" placeholder="Mot de passe">
-    <button id="loginBtn">Connexion</button>
-    <div class="login-err" id="loginErr"></div>
+    <div id="loginFormSection">
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPwd" placeholder="Mot de passe">
+      <button id="loginBtn">Connexion</button>
+      <div class="login-err" id="loginErr"></div>
+      <div style="text-align:center;margin-top:8px">
+        <button style="font-size:12px;background:none;border:none;color:#6b7280;cursor:pointer;text-decoration:underline" onclick="showResetForm()">Mot de passe oublié ?</button>
+      </div>
+    </div>
+    <div id="resetFormSection" style="display:none">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Entre ton email pour recevoir un lien de réinitialisation.</p>
+      <input type="email" id="resetEmail" placeholder="Email">
+      <div class="login-err" id="resetMsg" style="color:#059669"></div>
+      <button onclick="sendReset()">Envoyer le lien</button>
+      <button style="margin-top:6px;background:#f3f4f6;color:#374151" onclick="hideResetForm()">Annuler</button>
+    </div>
+    <div id="newPwdSection" style="display:none">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:10px">Choisis un nouveau mot de passe.</p>
+      <input type="password" id="newPwdInput" placeholder="Nouveau mot de passe (6 car. min.)">
+      <div class="login-err" id="newPwdErr"></div>
+      <button onclick="saveNewPassword()">Enregistrer</button>
+    </div>
   </div>
 </div>
 
@@ -661,6 +679,42 @@ async function doLogin() {
 function openPanel() {
   document.getElementById('teacherPanel').classList.add('open');
 }
+function showResetForm(){
+  document.getElementById('loginFormSection').style.display='none';
+  document.getElementById('resetFormSection').style.display='block';
+  document.getElementById('resetEmail').value=document.getElementById('loginEmail').value;
+}
+function hideResetForm(){
+  document.getElementById('resetFormSection').style.display='none';
+  document.getElementById('loginFormSection').style.display='block';
+}
+async function sendReset(){
+  const email=document.getElementById('resetEmail').value.trim();
+  const msg=document.getElementById('resetMsg');
+  if(!email){msg.style.color='#dc2626';msg.textContent='Entre ton email d\'abord.';return;}
+  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.href});
+  if(error){msg.style.color='#dc2626';msg.textContent=error.message;return;}
+  msg.style.color='#059669';msg.textContent='Email envoyé ! Vérifie ta boîte mail.';
+}
+async function saveNewPassword(){
+  const pwd=document.getElementById('newPwdInput').value.trim();
+  const err=document.getElementById('newPwdErr');
+  if(pwd.length<6){err.textContent='6 caractères minimum.';return;}
+  const{error}=await sb.auth.updateUser({password:pwd});
+  if(error){err.textContent=error.message;return;}
+  document.getElementById('loginOverlay').classList.remove('show');
+  document.getElementById('newPwdSection').style.display='none';
+  document.getElementById('loginFormSection').style.display='block';
+  alert('Mot de passe mis à jour !');
+}
+sb.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){
+    document.getElementById('loginFormSection').style.display='none';
+    document.getElementById('resetFormSection').style.display='none';
+    document.getElementById('newPwdSection').style.display='block';
+    document.getElementById('loginOverlay').classList.add('show');
+  }
+});
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
