@@ -191,7 +191,8 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);height:100vh;overflo
 
   <div class="tp-section">
     <h3>Exercices</h3>
-    <div class="tp-row"><label>Varier automatiquement les unités</label><input type="checkbox" id="optVary"></div>
+    <div class="tp-row"><label>Varier automatiquement les unités</label><input type="checkbox" id="optVary" onchange="const mc=document.getElementById('optMixCat');mc.disabled=!this.checked;document.getElementById('rowMixCat').style.opacity=this.checked?'1':'.4';if(!this.checked)mc.checked=false;"></div>
+    <div class="tp-row" id="rowMixCat" style="padding-left:16px;opacity:.4"><label>Mélanger les catégories</label><input type="checkbox" id="optMixCat" disabled></div>
     <div class="tp-row"><label>Inclure les décimales</label><input type="checkbox" id="optDecimals"></div>
     <div class="tp-row"><label>Nombre d'exercices</label><input type="number" id="optNbEx" value="10" min="5" max="30"></div>
   </div>
@@ -533,8 +534,19 @@ function updateDirection() {
 
 // ── EXERCICE ──────────────────────────────────────────────
 function generateExercise() {
-  // Mode "varier" : tirer une paire from/to aléatoire dans la catégorie
+  // Mode "varier" : tirer une paire from/to aléatoire
   if (document.getElementById('optVary').checked) {
+    // Mélanger les catégories si activé
+    if (document.getElementById('optMixCat').checked) {
+      const map = { length:'catLength', mass:'catMass', volume:'catVolume', volumecubic:'catVolumeCubic', area:'catArea' };
+      const available = Object.entries(map).filter(([k, v]) => document.getElementById(v).checked).map(([k]) => k);
+      if (available.length > 1) {
+        cat = available[Math.floor(Math.random() * available.length)];
+        document.getElementById('selCat').value = cat;
+        populateSelects();
+        buildAbaque();
+      }
+    }
     const n = UNITS[cat].units.length;
     let a, b;
     do { a = Math.floor(Math.random() * n); b = Math.floor(Math.random() * n); }
@@ -555,7 +567,7 @@ function generateExercise() {
   const withDec = document.getElementById('optDecimals').checked;
 
   let num;
-  const maxInt = steps <= 2 ? 99 : 9;
+  const maxInt = steps <= 1 ? 99 : steps <= 2 ? 49 : 19;
 
   if (toIdx > fromIdx) {
     // grande → petite unité : nombre simple (e.g. 3 km → m)
